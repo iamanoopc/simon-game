@@ -1,0 +1,250 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Simon Game</title>
+    <link href="https://fonts.googleapis.com/css?family=Patua+One" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=VT323" rel="stylesheet">
+
+
+
+<script src="https://fb.me/react-15.0.1.js"></script>
+    <script src="https://fb.me/react-dom-15.0.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/0.10.0/Tone.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"></script>
+
+<script type="text/babel">
+
+
+    // Code goes here
+
+
+
+
+
+window.onload = function() {
+const buttonsArray = document.getElementsByClassName("btn");
+const buttons = [].slice.call(buttonsArray);
+const levelIndicator = document.getElementById("level-indicator");
+const randomIndex = () => {
+  return [1, 2, 3, 4][Math.floor(Math.random() * 4)];
+};
+
+let simonPattern = [];
+let playerPattern = [];
+let playerTurn = false;
+let strictMode = false;
+let lives = 3;
+let playerScore = 0;
+levelIndicator.innerHTML = "START";
+function recursiveHighlight(n) {
+  n++;
+  if (n === simonPattern.length) {
+    keyError = false;
+    return;
+  } else {
+    setTimeout(function() {
+      buttonsArray[simonPattern[n] - 1].classList.add("highlight");
+      synth.triggerAttack(
+        buttonsArray[simonPattern[n] - 1].attributes.note.value
+      );
+
+      // synth.triggerAttack(e.toElement.attributes.note.textContent)
+      setTimeout(function() {
+        buttonsArray[simonPattern[n] - 1].classList.remove("highlight");
+        synth.triggerRelease();
+        recursiveHighlight(n);
+      }, 600);
+    }, 100);
+  }
+}
+function userHighlight(item) {
+  setTimeout(function() {
+    item.classList.add("highlight");
+
+    setTimeout(function() {
+      item.classList.remove("highlight");
+    }, 400);
+  }, 100);
+}
+function highLight() {
+  var count = -1;
+  recursiveHighlight(count);
+}
+function strictplay() {
+  strictMode = true;
+  console.log("strict mode");
+}
+
+function scores() {
+  synth.triggerRelease();
+  lives = 3;
+  simonPattern = [];
+  playerPattern = [];
+  levelIndicator.innerHTML = playerScore;
+}
+
+var userClickCount = 0;
+let keyError = false;
+
+function mrClik() {
+  userHighlight(this);
+  userClickCount++;
+  if (simonPattern[userClickCount - 1] === Number(this.id)) {
+    // console.log("match found", this.id);
+    playerPattern.push(Number(this.id));
+  } else {
+    // console.log("key Error", this.id);
+    keyError = true;
+    levelIndicator.innerHTML =
+      `<div class="small">` + "Sequence Error" + `</div>`;
+    console.log("error")
+    
+    synth.triggerRelease();
+    lives--;
+    if (lives === 0) {
+      levelIndicator.innerHTML = "YOU LOSE";
+      setTimeout(function() {
+        levelIndicator.innerHTML = "START";
+      }, 2200);
+      lives = 3;
+      simonPattern=[];
+      return;
+    }
+    setTimeout(function() {
+      levelIndicator.innerHTML = simonPattern.length;
+      startplay();
+    }, 2200);
+    
+    return;
+  }
+  if (simonPattern.length === playerPattern.length) {
+    levelIndicator.innerHTML = "success";
+    playerScore = simonPattern.length;
+    // console.log("level finished");
+    setTimeout(startplay, 1200);
+  } else if (simonPattern.length < playerPattern.length) {
+    return;
+  }
+}
+
+function buttonsEnable() {
+  buttons.map(item => {
+    item.disabled = false;
+  });
+}
+function buttonsDisable() {
+  buttons.map(item => {
+    item.disabled = true;
+  });
+}
+function startplay() {
+  if (lives === 0) {
+    return;
+  } else if (lives <= 3) {
+    levelIndicator.innerHTML = simonPattern.length;
+    if (simonPattern.length === 9) {
+      levelIndicator.innerHTML = "YOU WIN";
+      setTimeout(function() {
+        levelIndicator.innerHTML = "GAME OVER";
+      }, 2200);
+      simonPattern = [];
+      return;
+    }
+    if (!keyError && playerPattern.length === simonPattern.length) {
+      simonPattern.push(randomIndex());
+      levelIndicator.innerHTML = simonPattern.length;
+    }
+    if (keyError && strictMode) {
+      let oldSimonPattern = simonPattern;
+      simonPattern = [];
+      oldSimonPattern.forEach(()=>{
+        simonPattern.push(randomIndex());
+      })
+      
+      levelIndicator.innerHTML = simonPattern.length;
+    }
+
+    setTimeout(highLight, 1600);
+    userClickCount = 0;
+    playerPattern = [];
+  }
+
+  // console.log(simonPattern,"simon pattern");
+}
+
+buttons.map(item => {
+  item.onclick = mrClik;
+
+  item.addEventListener("mousedown", function(e) {
+    //play the note on mouse down
+    synth.triggerAttack(e.toElement.attributes.note.textContent);
+  });
+  item.addEventListener("mouseup", function(e) {
+    //release on mouseup
+    synth.triggerRelease();
+  });
+});
+
+
+var synth = new Tone.AMSynth().toMaster();
+
+
+
+  const strictBtn = document.getElementById("strictBtn");
+const startBtn = document.getElementById("startBtn");
+const scoresBtn = document.getElementById("scoresBtn");
+  
+strictBtn.onclick = function(){strictplay()}
+startBtn.onclick = function(){startplay()}
+scoresBtn.onclick = function(){scores()}
+};
+    </script>
+
+  </head>
+  <body>
+    <link rel="stylesheet" href="style.css">
+      
+<div class="psymon-board">
+  <div class="psymon-circle">
+  <button id="1" class="btn green" note="C4"> </button>
+  <button id="2" class="btn red" note="E4"> </button>
+  <button id="3" class="btn yellow" note="B4"> </button>
+  <button id="4" class="btn blue" note="G4"> </button>  
+  <div class="control-panel">
+    <div class="control-buttons">
+      <h1 class="title">Simon</h1>
+      
+      <div name="level" id="level-indicator" class="level-screen small-shadow">
+        
+      </div>
+      <div class="strict-btn">
+        <label for="strict-button">strict</label>
+        <button name="strict-button" class="strict" id="strictBtn"></button>
+        
+      </div>
+      <div class="start-btn">
+        <label for="start-button">start</label>
+        <button name="start-button" class="start" id="startBtn"></button>
+        
+      </div>
+      <div class="end-btn">
+        <label for="end-button">scores</label>
+        <button name="end-button" class="end" id="scoresBtn"></button>
+        
+      </div>
+    
+  </div>
+    </div>
+</div>
+  </div>
+    
+    
+    <!--
+    This is where you link to your React code. Can be .js or .jsx 
+    extension, doesn't really matter.
+    -->
+
+  </body>
+</html>
